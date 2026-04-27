@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Charity {
+  id          String @id @default(uuid())
+  name        String
+  description String
+  users       User[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+
+  scores  Score[]
+  winners Winner[]
+
+  charityId    String?
+  charity      Charity?      @relation(fields: [charityId], references: [id])
+  subscription Subscription?
+}
+
+model Score {
+  id     String   @id @default(uuid())
+  value  Int
+  date   DateTime
+  userId String
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Draw {
+  id        String   @id @default(uuid())
+  month     String
+  numbers   Int[]
+  createdAt DateTime @default(now())
+
+  jackpot Float @default(0)
+
+  winners Winner[]
+}
+
+model Winner {
+  id         String @id @default(uuid())
+  userId     String
+  drawId     String
+  matchCount Int
+  prize      Float
+  proof       String?
+  status     String @default("PENDING")
+
+  user User @relation(fields: [userId], references: [id])
+  draw Draw @relation(fields: [drawId], references: [id])
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  plan      String // MONTHLY / YEARLY
+  status    String // ACTIVE / INACTIVE
+  startDate DateTime
+  endDate   DateTime
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
